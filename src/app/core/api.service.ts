@@ -62,7 +62,11 @@ export interface CompleteAnalysis extends Analysis {
 }
 
 export interface Statistics {
-  [key: string]: unknown;
+  total_decisions: number;
+  total_analyses: number;
+  analyses_by_status: Record<string, number>;
+  average_score: number;
+  top_recommendations: Array<{ alternative: string; times_recommended: number }>;
 }
 
 @Injectable({ providedIn: 'root' })
