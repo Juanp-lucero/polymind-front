@@ -102,6 +102,14 @@ export class ApiService {
       .pipe(catchError(error => this.handleError(error)));
   }
 
+  postMultipart<T>(path: string, body: FormData): Observable<T> {
+    const token = localStorage.getItem('polymind_access_token');
+    let headers = new HttpHeaders();
+    if (token) headers = headers.set('Authorization', `Bearer ${token}`);
+    return this.http.post<T>(`${this.baseUrl}${path}`, body, { headers })
+      .pipe(catchError(error => this.handleError(error)));
+  }
+
   delete<T>(path: string): Observable<T> {
     return this.http.delete<T>(`${this.baseUrl}${path}`, { headers: this.headers() })
       .pipe(catchError(error => this.handleError(error)));
