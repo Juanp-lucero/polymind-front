@@ -48,6 +48,7 @@ export class DecisionDetailPage {
   private id=0;
   constructor(){
     this.id=Number(this.route.snapshot.paramMap.get('id'));
+    if(!Number.isInteger(this.id)||this.id<=0){this.error.set('El identificador de la decisión no es válido.');this.loading.set(false);return;}
     this.api.get<Decision>(`/decisions/${this.id}`).subscribe({next:value=>{this.decision.set(value);this.loading.set(false);},error:e=>{this.error.set(e.message);this.loading.set(false);}});
     this.reloadAnalyses();
   }
