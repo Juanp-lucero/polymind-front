@@ -16,7 +16,7 @@ export class AuthService {
           localStorage.setItem('polymind_access_token', tokens.access_token);
           localStorage.setItem('polymind_refresh_token', tokens.refresh_token);
           this.isAuthenticated.set(true);
-          this.loadUser().then(resolve).catch(reject);
+          this.loadUser().then(() => { localStorage.setItem('polymind_user_name', this.currentUser()?.name || ''); resolve(); }).catch(reject);
         },
         error: reject,
       });
@@ -37,6 +37,7 @@ export class AuthService {
       this.api.me().subscribe({
         next: user => {
           this.currentUser.set(user);
+          localStorage.setItem('polymind_user_name', user.name);
           this.isAuthenticated.set(true);
           resolve();
         },
@@ -52,6 +53,7 @@ export class AuthService {
     localStorage.removeItem('polymind_access_token');
     localStorage.removeItem('polymind_refresh_token');
     this.currentUser.set(null);
+    localStorage.removeItem('polymind_user_name');
     this.isAuthenticated.set(false);
     if (redirect) void this.router.navigate(['/login']);
   }
