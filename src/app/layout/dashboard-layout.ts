@@ -32,7 +32,7 @@ import { AuthService } from '../core/auth.service';
 export class DashboardLayout {
   private readonly auth=inject(AuthService);
   private readonly router=inject(Router);
-  readonly sidebarOpen=signal(true);
+  readonly sidebarOpen=signal(false);
   readonly userName=()=>this.auth.currentUser()?.name || 'Mi cuenta';
   readonly userEmail=()=>this.auth.currentUser()?.email || 'Sesión iniciada';
   readonly initials=()=>this.userName().split(' ').map(x=>x[0]).slice(0,2).join('').toUpperCase();
