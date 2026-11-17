@@ -15,7 +15,7 @@ import { AuthService } from '../../core/auth.service';
         <label>Nombre completo<input name="name" [(ngModel)]="name" required minlength="2" placeholder="Tu nombre"></label>
         <label>Correo electrónico<input type="email" name="email" [(ngModel)]="email" required placeholder="nombre@empresa.com"></label>
         <label>Contraseña<input type="password" name="password" [(ngModel)]="password" required minlength="8" placeholder="Mínimo 8 caracteres"></label>
-        <button [disabled]="loading()">{{loading()?'Creando cuenta...':'Crear cuenta'} } <span>↗</span></button>
+        <button [disabled]="loading()">{{loading()?'Creando cuenta...':'Crear cuenta'}} <span>↗</span></button>
       </form><div class="switch">¿Ya tienes cuenta? <a routerLink="/login">Inicia sesión</a></div></div></section>
     </main>
   `,
