@@ -73,6 +73,7 @@ export class OverviewPage {
     for (const key of keys) if (typeof data[key] === 'number' || typeof data[key] === 'string') return data[key] as number | string;
     if (keys.includes('total_decisions')) return this.decisions().length;
     if (keys.includes('pending_decisions')) return this.decisions().filter(item => item.status === 'pending').length;
+    if (keys.includes('completed_analyses')) return data['total_analyses'] as number ?? '—';
     return '—';
   }
   status(value: string): string {
