@@ -49,7 +49,7 @@ import { ApiService, Decision, Statistics } from '../../core/api.service';
 export class OverviewPage {
   private readonly api = inject(ApiService);
   readonly decisions = signal<Decision[]>([]);
-  readonly stats = signal<Statistics>({});
+  readonly stats = signal<Partial<Statistics>>({});
   readonly loading = signal(true);
   readonly error = signal('');
   readonly agentCards = [
@@ -69,7 +69,7 @@ export class OverviewPage {
   }
 
   metric(...keys: string[]): number | string {
-    const data = this.stats() as Record<string, unknown>;
+    const data = this.stats() as unknown as Record<string, unknown>;
     for (const key of keys) if (typeof data[key] === 'number' || typeof data[key] === 'string') return data[key] as number | string;
     if (keys.includes('total_decisions')) return this.decisions().length;
     if (keys.includes('pending_decisions')) return this.decisions().filter(item => item.status === 'pending').length;
