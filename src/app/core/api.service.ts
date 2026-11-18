@@ -82,7 +82,14 @@ export class ApiService {
   }
 
   private handleError(error: HttpErrorResponse) {
-    if (error.status === 401) {\n      localStorage.removeItem('polymind_access_token');\n      localStorage.removeItem('polymind_refresh_token');\n      localStorage.removeItem('polymind_user_name');\n      window.location.assign('/login');\n    }\n    const message =\n      typeof error.error?.detail === 'string'
+    if (error.status === 401) {
+      localStorage.removeItem('polymind_access_token');
+      localStorage.removeItem('polymind_refresh_token');
+      localStorage.removeItem('polymind_user_name');
+      window.location.assign('/login');
+    }
+    const message =
+      typeof error.error?.detail === 'string'
         ? error.error.detail
         : error.status === 0
           ? 'No se pudo conectar con el servidor. Verifica que el backend esté activo.'
