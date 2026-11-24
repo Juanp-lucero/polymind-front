@@ -2,6 +2,17 @@
 
 Aplicación web de Polymind IA construida con Angular 21 y TypeScript. Consume la API FastAPI del repositorio `Juanp-lucero/polymind-back`.
 
+## Despliegue
+
+Desplegado en Vercel:
+
+| | URL | Repositorio |
+|---|---|---|
+| Aplicación (frontend) | https://polymind-front.vercel.app | [Juanp-lucero/polymind-front](https://github.com/Juanp-lucero/polymind-front) |
+| API (backend) | https://polymind-back.vercel.app | [Juanp-lucero/polymind-back](https://github.com/Juanp-lucero/polymind-back) |
+| Estado de la API | https://polymind-back.vercel.app/health | |
+| Documentación de la API | https://polymind-back.vercel.app/docs | |
+
 ## Funcionalidades
 
 - Registro e inicio de sesión con JWT.
