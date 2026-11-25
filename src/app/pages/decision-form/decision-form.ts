@@ -18,7 +18,7 @@ import { ApiService } from '../../core/api.service';
         <label>Contexto adicional<textarea name="context" [(ngModel)]="context" rows="3" placeholder="Presupuesto, plazos, restricciones, recursos disponibles..."></textarea></label>
         <div class="rule"></div>
         <div class="section-title"><span>02</span><div><b>Alternativas a evaluar</b><small>Incluye al menos dos caminos posibles</small></div></div>
-        @for(alt of alternatives();track $index;let i=$index){<div class="alternative-input"><div class="alt-index">{{(i+1).toString().padStart(2,'0')}}</div><input [name]="'alternative-'+i" [ngModel]="alt" (ngModelChange)="updateAlternative(i,$event)" required placeholder="Describe una alternativa"><button type="button" (click)="removeAlternative(i)" [disabled]="alternatives().length<=2" aria-label="Eliminar alternativa">×</button></div>}
+        @for(alt of alternatives();track $index;let i=$index){<div class="alternative-input"><div class="alt-index">{{(i+1).toString().padStart(2,'0')}}</div><input [name]="'alternative-'+i" [ngModel]="alt" (ngModelChange)="updateAlternative(i,$event)" required maxlength="200" placeholder="Describe una alternativa"><button type="button" (click)="removeAlternative(i)" [disabled]="alternatives().length<=2" aria-label="Eliminar alternativa">×</button></div>}
         <button class="add-alt" type="button" (click)="addAlternative()" [disabled]="alternatives().length>=8">＋ Añadir alternativa</button>
         <div class="form-actions"><a routerLink="/app/decisions">Cancelar</a><button class="submit" type="submit" [disabled]="loading()">{{loading()?'Guardando...':'Guardar decisión'}} <span>↗</span></button></div>
       </form>
