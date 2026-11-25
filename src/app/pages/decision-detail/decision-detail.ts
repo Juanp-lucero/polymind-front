@@ -55,7 +55,7 @@ export class DecisionDetailPage {
     this.id=Number(this.route.snapshot.paramMap.get('id'));
     if(!Number.isInteger(this.id)||this.id<=0){this.error.set('El identificador de la decisión no es válido.');this.loading.set(false);return;}
     this.api.get<Decision>(`/decisions/${this.id}`).subscribe({next:value=>{this.decision.set(value);this.loading.set(false);},error:e=>{this.error.set(e.message);this.loading.set(false);}});
-    this.reloadAnalyses();
+    this.reloadAnalyses(true);
   }
   deleteDecision(){
     this.deleting.set(true);this.error.set('');
@@ -64,7 +64,8 @@ export class DecisionDetailPage {
       error:e=>{this.error.set(e.message);this.deleting.set(false);this.confirmingDelete.set(false);}
     });
   }
-  reloadAnalyses(){this.api.listAnalyses(this.id).subscribe({next:values=>this.analyses.set(values),error:e=>this.error.set(e.message)});}
+  reloadAnalyses(openLatest=false){this.api.listAnalyses(this.id).subscribe({next:values=>{this.analyses.set(values);const latest=this.latestAnalysis(values);if(openLatest&&latest&&!this.complete())this.loadComplete(latest);},error:e=>this.error.set(e.message)});}
+  private latestAnalysis(values:Analysis[]){return [...values].sort((a,b)=>(b.created_at||'').localeCompare(a.created_at||'')||b.id-a.id)[0];}
   runAnalysis(){
     this.analyzing.set(true);this.error.set('');this.complete.set(null);
     this.api.analyzeDecision(this.id).subscribe({
