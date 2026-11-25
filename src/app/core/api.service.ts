@@ -2,6 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpErrorResponse, HttpHeaders } from '@angular/common/http';
 import { Observable, catchError, finalize, shareReplay, switchMap, tap, throwError } from 'rxjs';
 import { environment } from '../../environments/environment';
+import { STORAGE_KEYS, clearSessionStorage } from './storage-keys';
 
 export interface User {
   id: number;
@@ -81,7 +82,7 @@ export class ApiService {
   private readonly baseUrl = environment.apiUrl;
 
   private headers(): HttpHeaders {
-    const token = localStorage.getItem('polymind_access_token');
+    const token = localStorage.getItem(STORAGE_KEYS.accessToken);
     let headers = new HttpHeaders({ 'Content-Type': 'application/json' });
     if (token) headers = headers.set('Authorization', `Bearer ${token}`);
     return headers;
@@ -89,9 +90,7 @@ export class ApiService {
 
   private handleError(error: HttpErrorResponse) {
     if (error.status === 401) {
-      localStorage.removeItem('polymind_access_token');
-      localStorage.removeItem('polymind_refresh_token');
-      localStorage.removeItem('polymind_user_name');
+      clearSessionStorage();
       window.location.assign('/login');
     }
     const message =
@@ -138,7 +137,7 @@ export class ApiService {
   }
 
   private refreshTokenValue(): string | null {
-    return localStorage.getItem('polymind_refresh_token');
+    return localStorage.getItem(STORAGE_KEYS.refreshToken);
   }
 
   /** Exchange the refresh token for new tokens (one request at a time). */
@@ -150,8 +149,8 @@ export class ApiService {
         })
         .pipe(
           tap(tokens => {
-            localStorage.setItem('polymind_access_token', tokens.access_token);
-            localStorage.setItem('polymind_refresh_token', tokens.refresh_token);
+            localStorage.setItem(STORAGE_KEYS.accessToken, tokens.access_token);
+            localStorage.setItem(STORAGE_KEYS.refreshToken, tokens.refresh_token);
           }),
           finalize(() => (this.refreshing$ = null)),
           shareReplay(1)
@@ -173,7 +172,7 @@ export class ApiService {
   }
 
   postMultipart<T>(path: string, body: FormData): Observable<T> {
-    const token = localStorage.getItem('polymind_access_token');
+    const token = localStorage.getItem(STORAGE_KEYS.accessToken);
     let headers = new HttpHeaders();
     if (token) headers = headers.set('Authorization', `Bearer ${token}`);
     return this.http.post<T>(`${this.baseUrl}${path}`, body, { headers })

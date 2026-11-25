@@ -1,22 +1,23 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { ApiService, User } from './api.service';
+import { STORAGE_KEYS } from './storage-keys';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private readonly api = inject(ApiService);
   private readonly router = inject(Router);
   readonly currentUser = signal<User | null>(null);
-  readonly isAuthenticated = signal(!!localStorage.getItem('polymind_access_token'));
+  readonly isAuthenticated = signal(!!localStorage.getItem(STORAGE_KEYS.accessToken));
 
   login(email: string, password: string) {
     return new Promise<void>((resolve, reject) => {
       this.api.login({ email, password }).subscribe({
         next: tokens => {
-          localStorage.setItem('polymind_access_token', tokens.access_token);
-          localStorage.setItem('polymind_refresh_token', tokens.refresh_token);
+          localStorage.setItem(STORAGE_KEYS.accessToken, tokens.access_token);
+          localStorage.setItem(STORAGE_KEYS.refreshToken, tokens.refresh_token);
           this.isAuthenticated.set(true);
-          this.loadUser().then(() => { localStorage.setItem('polymind_user_name', this.currentUser()?.name || ''); resolve(); }).catch(reject);
+          this.loadUser().then(() => { localStorage.setItem(STORAGE_KEYS.userName, this.currentUser()?.name || ''); resolve(); }).catch(reject);
         },
         error: reject,
       });
@@ -37,7 +38,7 @@ export class AuthService {
       this.api.me().subscribe({
         next: user => {
           this.currentUser.set(user);
-          localStorage.setItem('polymind_user_name', user.name);
+          localStorage.setItem(STORAGE_KEYS.userName, user.name);
           this.isAuthenticated.set(true);
           resolve();
         },
@@ -50,10 +51,10 @@ export class AuthService {
   }
 
   logout(redirect = true) {
-    localStorage.removeItem('polymind_access_token');
-    localStorage.removeItem('polymind_refresh_token');
+    localStorage.removeItem(STORAGE_KEYS.accessToken);
+    localStorage.removeItem(STORAGE_KEYS.refreshToken);
     this.currentUser.set(null);
-    localStorage.removeItem('polymind_user_name');
+    localStorage.removeItem(STORAGE_KEYS.userName);
     this.isAuthenticated.set(false);
     if (redirect) void this.router.navigate(['/login']);
   }

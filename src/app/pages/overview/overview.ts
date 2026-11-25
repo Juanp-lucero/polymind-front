@@ -2,6 +2,7 @@ import { Component, inject, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { ApiService, Decision, Statistics } from '../../core/api.service';
+import { STORAGE_KEYS } from '../../core/storage-keys';
 
 @Component({
   selector: 'app-overview-page',
@@ -58,7 +59,7 @@ export class OverviewPage {
     { name: 'Impacto humano', desc: 'Personas y adopción', icon: '♧' },
     { name: 'Gestión de riesgos', desc: 'Riesgos y mitigación', icon: '◇' },
   ];
-  readonly firstName = () => localStorage.getItem('polymind_user_name')?.split(' ')[0] || 'de nuevo';
+  readonly firstName = () => localStorage.getItem(STORAGE_KEYS.userName)?.split(' ')[0] || 'de nuevo';
 
   constructor() {
     this.api.listDecisions().subscribe({
