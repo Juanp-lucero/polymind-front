@@ -15,12 +15,24 @@ Desplegado en Vercel:
 
 ## Funcionalidades
 
-- Registro e inicio de sesión con JWT.
-- Sesión de usuario y protección de rutas.
-- Dashboard con estadísticas y decisiones recientes.
-- Creación y consulta de decisiones con múltiples alternativas.
-- Ejecución de análisis multiagente a través del backend.
-- Historial, informe ejecutivo, recomendaciones, evaluaciones individuales y comparación ponderada.
+- **Sesión:**
+  - registro e inicio de sesión con JWT;
+  - protección de rutas;
+  - **renovación automática del token**: si el access token vence, se usa el refresh token y la petición se repite sin sacar al usuario (`core/api.service.ts`).
+- **Dashboard** con estadísticas y decisiones recientes. El indicador lateral muestra el estado real del backend y si los agentes están usando IA (`/health`).
+- **Decisiones:**
+  - crear, **editar** y **eliminar** con confirmación;
+  - entre 2 y 8 alternativas, sin repetidas y de máximo 200 caracteres cada una.
+- **Análisis multiagente:**
+  - mensajes de progreso por agente mientras se ejecuta;
+  - al abrir una decisión se carga el análisis más reciente;
+  - aviso de **información insuficiente** antes de analizar, con enlace para completarla.
+- **Informe:**
+  - síntesis ejecutiva;
+  - **justificación** de cada puntuación;
+  - etiqueta **IA** o **Reglas** en cada agente;
+  - comparación ponderada;
+  - aviso cuando los agentes **discrepan** fuertemente sobre una alternativa.
 - Diseño responsive en español.
 
 ## Requisitos
@@ -37,6 +49,19 @@ npm start
 ```
 
 Abre `http://localhost:4200`.
+
+## Pruebas
+
+```bash
+npm test          # Vitest: servicios, guard, formulario y detalle de la decisión
+```
+
+Las pruebas cubren:
+- la renovación automática del token;
+- el guard de rutas;
+- la validación y la edición de decisiones;
+- la interpretación del análisis (fuente IA o reglas, desacuerdos e información faltante).
+
 
 ## Configuración del backend
 
