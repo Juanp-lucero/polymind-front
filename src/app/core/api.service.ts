@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpErrorResponse, HttpHeaders } from '@angular/common/http';
-import { Observable, catchError, throwError } from 'rxjs';
+import { Observable, catchError, finalize, shareReplay, switchMap, tap, throwError } from 'rxjs';
 import { environment } from '../../environments/environment';
 
 export interface User {
@@ -97,17 +97,61 @@ export class ApiService {
     return throwError(() => new Error(message));
   }
 
+  /** Refresh in progress, shared by every request that got a 401. */
+  private refreshing$: Observable<TokenResponse> | null = null;
+
   private request<T>(
     method: 'GET' | 'POST' | 'PUT' | 'DELETE',
     path: string,
     body?: unknown
   ): Observable<T> {
-    return this.http
-      .request<T>(method, `${this.baseUrl}${path}`, {
+    const send = () =>
+      this.http.request<T>(method, `${this.baseUrl}${path}`, {
         body,
         headers: this.headers()
+      });
+
+    return send().pipe(
+      catchError((error: HttpErrorResponse) => {
+        if (error.status !== 401 || this.isAuthPath(path) || !this.refreshTokenValue()) {
+          return this.handleError(error);
+        }
+        // The access token expired: renew it once and repeat the request.
+        return this.refreshSession().pipe(
+          switchMap(() => send()),
+          catchError(retryError => this.handleError(retryError))
+        );
       })
-      .pipe(catchError(error => this.handleError(error)));
+    );
+  }
+
+  private isAuthPath(path: string): boolean {
+    return path.startsWith('/auth/login')
+      || path.startsWith('/auth/register')
+      || path.startsWith('/auth/refresh');
+  }
+
+  private refreshTokenValue(): string | null {
+    return localStorage.getItem('polymind_refresh_token');
+  }
+
+  /** Exchange the refresh token for new tokens (one request at a time). */
+  refreshSession(): Observable<TokenResponse> {
+    if (!this.refreshing$) {
+      this.refreshing$ = this.http
+        .post<TokenResponse>(`${this.baseUrl}/auth/refresh`, {
+          refresh_token: this.refreshTokenValue()
+        })
+        .pipe(
+          tap(tokens => {
+            localStorage.setItem('polymind_access_token', tokens.access_token);
+            localStorage.setItem('polymind_refresh_token', tokens.refresh_token);
+          }),
+          finalize(() => (this.refreshing$ = null)),
+          shareReplay(1)
+        );
+    }
+    return this.refreshing$;
   }
 
   get<T>(path: string): Observable<T> {
