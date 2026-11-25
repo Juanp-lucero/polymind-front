@@ -19,6 +19,7 @@ export const routes: Routes = [
       { path: 'overview', loadComponent: () => import('./pages/overview/overview').then(m => m.OverviewPage) },
       { path: 'decisions', loadComponent: () => import('./pages/decisions/decisions').then(m => m.DecisionsPage) },
       { path: 'decisions/new', loadComponent: () => import('./pages/decision-form/decision-form').then(m => m.DecisionFormPage) },
+      { path: 'decisions/:id/edit', loadComponent: () => import('./pages/decision-form/decision-form').then(m => m.DecisionFormPage) },
       { path: 'decisions/:id', loadComponent: () => import('./pages/decision-detail/decision-detail').then(m => m.DecisionDetailPage) },
     ],
   },

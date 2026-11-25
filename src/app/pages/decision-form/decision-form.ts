@@ -1,14 +1,14 @@
 import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
-import { ApiService } from '../../core/api.service';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { ApiService, Decision } from '../../core/api.service';
 
 @Component({
   selector:'app-decision-form-page',
   imports:[FormsModule,RouterLink],
   template:`
     <a class="back" routerLink="/app/decisions">← Volver a decisiones</a>
-    <div class="intro"><span class="eyebrow">NUEVO ESCENARIO</span><h1>Define tu decisión</h1><p>Cuéntanos qué necesitas resolver. Tus agentes evaluarán las alternativas desde distintas perspectivas.</p></div>
+    <div class="intro">@if(editingId()){<span class="eyebrow">EDITAR ESCENARIO</span><h1>Actualiza tu decisión</h1><p>Completa la información o ajusta las alternativas. Vuelve a ejecutar el análisis para obtener una evaluación actualizada.</p>}@else{<span class="eyebrow">NUEVO ESCENARIO</span><h1>Define tu decisión</h1><p>Cuéntanos qué necesitas resolver. Tus agentes evaluarán las alternativas desde distintas perspectivas.</p>}</div>
     <div class="form-layout">
       <form class="form-card" (ngSubmit)="submit()">
         @if(error()){<div class="alert">{{error()}}</div>}
@@ -20,7 +20,7 @@ import { ApiService } from '../../core/api.service';
         <div class="section-title"><span>02</span><div><b>Alternativas a evaluar</b><small>Incluye al menos dos caminos posibles</small></div></div>
         @for(alt of alternatives();track $index;let i=$index){<div class="alternative-input"><div class="alt-index">{{(i+1).toString().padStart(2,'0')}}</div><input [name]="'alternative-'+i" [ngModel]="alt" (ngModelChange)="updateAlternative(i,$event)" required maxlength="200" placeholder="Describe una alternativa"><button type="button" (click)="removeAlternative(i)" [disabled]="alternatives().length<=2" aria-label="Eliminar alternativa">×</button></div>}
         <button class="add-alt" type="button" (click)="addAlternative()" [disabled]="alternatives().length>=8">＋ Añadir alternativa</button>
-        <div class="form-actions"><a routerLink="/app/decisions">Cancelar</a><button class="submit" type="submit" [disabled]="loading()">{{loading()?'Guardando...':'Guardar decisión'}} <span>↗</span></button></div>
+        <div class="form-actions"><a routerLink="/app/decisions">Cancelar</a><button class="submit" type="submit" [disabled]="loading()">{{loading()?'Guardando...':(editingId()?'Guardar cambios':'Guardar decisión')}} <span>↗</span></button></div>
       </form>
       <aside class="guide-card"><div class="guide-icon">✳</div><span class="eyebrow">CÓMO FUNCIONA</span><h3>Una decisión.<br>Cuatro perspectivas.</h3><p>Cuando guardes tu escenario podrás ejecutar un análisis con cuatro agentes especializados.</p>
         <div class="agent"><b>01</b><div><strong>Financiero</strong><small>Viabilidad y costos</small></div></div>
@@ -42,6 +42,25 @@ export class DecisionFormPage{
   readonly alternatives=signal(['','']);
   readonly loading=signal(false);
   readonly error=signal('');
+  /** Id of the decision being edited, or null when creating a new one. */
+  readonly editingId=signal<number|null>(null);
+  constructor(){
+    const id=Number(inject(ActivatedRoute).snapshot.paramMap.get('id'));
+    if(Number.isInteger(id)&&id>0){
+      this.editingId.set(id);
+      this.loading.set(true);
+      this.api.get<Decision>(`/decisions/${id}`).subscribe({
+        next:decision=>{
+          this.title=decision.title;this.description=decision.description;this.context=decision.context||'';
+          const alternatives=[...decision.alternatives];
+          while(alternatives.length<2)alternatives.push('');
+          this.alternatives.set(alternatives);
+          this.loading.set(false);
+        },
+        error:error=>{this.error.set(error.message);this.loading.set(false);}
+      });
+    }
+  }
   updateAlternative(index:number,value:string){this.alternatives.update(list=>list.map((item,i)=>i===index?value:item));}
   addAlternative(){if(this.alternatives().length<8)this.alternatives.update(list=>[...list,'']);}
   removeAlternative(index:number){if(this.alternatives().length>2)this.alternatives.update(list=>list.filter((_,i)=>i!==index));}
@@ -50,7 +69,10 @@ export class DecisionFormPage{
     if(alternatives.length<2){this.error.set('Agrega al menos dos alternativas completas.');return;}
     if(new Set(alternatives.map(item=>item.toLowerCase())).size!==alternatives.length){this.error.set('No repitas alternativas.');return;}
     this.loading.set(true);this.error.set('');
-    this.api.createDecision({title:this.title.trim(),description:this.description.trim(),context:this.context.trim(),alternatives}).subscribe({
+    const data={title:this.title.trim(),description:this.description.trim(),context:this.context.trim(),alternatives};
+    const id=this.editingId();
+    const request=id?this.api.updateDecision(id,data):this.api.createDecision(data);
+    request.subscribe({
       next:decision=>void this.router.navigate(['/app/decisions',decision.id]),
       error:error=>{this.error.set(error.message);this.loading.set(false);}
     });
