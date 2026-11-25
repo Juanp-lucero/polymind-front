@@ -97,19 +97,29 @@ export class ApiService {
     return throwError(() => new Error(message));
   }
 
-  get<T>(path: string): Observable<T> {
-    return this.http.get<T>(`${this.baseUrl}${path}`, { headers: this.headers() })
+  private request<T>(
+    method: 'GET' | 'POST' | 'PUT' | 'DELETE',
+    path: string,
+    body?: unknown
+  ): Observable<T> {
+    return this.http
+      .request<T>(method, `${this.baseUrl}${path}`, {
+        body,
+        headers: this.headers()
+      })
       .pipe(catchError(error => this.handleError(error)));
+  }
+
+  get<T>(path: string): Observable<T> {
+    return this.request<T>('GET', path);
   }
 
   post<T>(path: string, body: unknown): Observable<T> {
-    return this.http.post<T>(`${this.baseUrl}${path}`, body, { headers: this.headers() })
-      .pipe(catchError(error => this.handleError(error)));
+    return this.request<T>('POST', path, body);
   }
 
   put<T>(path: string, body: unknown): Observable<T> {
-    return this.http.put<T>(`${this.baseUrl}${path}`, body, { headers: this.headers() })
-      .pipe(catchError(error => this.handleError(error)));
+    return this.request<T>('PUT', path, body);
   }
 
   postMultipart<T>(path: string, body: FormData): Observable<T> {
@@ -121,8 +131,7 @@ export class ApiService {
   }
 
   delete<T>(path: string): Observable<T> {
-    return this.http.delete<T>(`${this.baseUrl}${path}`, { headers: this.headers() })
-      .pipe(catchError(error => this.handleError(error)));
+    return this.request<T>('DELETE', path);
   }
 
   register(data: { name: string; email: string; password: string }) {
