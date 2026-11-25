@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, DestroyRef, inject, signal } from '@angular/core';
 import { DatePipe, DecimalPipe } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { AgentResult, ApiService, Analysis, CompleteAnalysis, Decision } from '../../core/api.service';
@@ -13,7 +13,7 @@ import { agentLabel, evaluationSource, findDisagreements, findInformationGaps, v
     @else if(error()&&!decision()){<div class="alert">{{error()}}</div>}
     @else if(decision();as item){
       <div class="title-row"><div><span class="eyebrow">DECISIÓN #{{item.id.toString().padStart(3,'0')}}</span><h1>{{item.title}}</h1><p>{{item.description}}</p></div><div class="title-actions"><span class="status" [class.done]="item.status==='completed'">{{status(item.status)}}</span><a class="edit-link" [routerLink]="['/app/decisions', item.id, 'edit']">Editar</a>@if(confirmingDelete()){<button class="delete-link danger" (click)="deleteDecision()" [disabled]="deleting()">{{deleting()?'Eliminando...':'Confirmar eliminación'}}</button><button class="delete-link" (click)="confirmingDelete.set(false)">Cancelar</button>}@else{<button class="delete-link" (click)="confirmingDelete.set(true)">Eliminar</button>}</div></div>
-      <div class="scenario-grid"><section class="panel scenario"><span class="eyebrow">CONTEXTO</span><p>{{item.context||'No se agregó contexto adicional.'}}</p><div class="subhead">Alternativas consideradas</div><div class="chips">@for(alt of item.alternatives;track alt){<span>{{alt}}</span>}</div></section><section class="run-card"><div class="run-icon">✳</div><span class="eyebrow">ANÁLISIS MULTIAGENTE</span><h3>Convierte el escenario en perspectiva.</h3><p>Cuatro agentes especializados evaluarán tus alternativas y el analista generará una recomendación ponderada.</p>@if(gaps().length){<div class="gaps"><b>Para un análisis más preciso:</b>@for(gap of gaps();track gap){<div>• {{gap}}</div>}<a [routerLink]="['/app/decisions', item.id, 'edit']">Completar información →</a></div>}<button (click)="runAnalysis()" [disabled]="analyzing()">{{analyzing()?'Ejecutando agentes...':'Ejecutar análisis'}} <span>↗</span></button>@if(analyzing()){<small class="progress-note">Conectando con el motor gRPC...</small>}</section></div>
+      <div class="scenario-grid"><section class="panel scenario"><span class="eyebrow">CONTEXTO</span><p>{{item.context||'No se agregó contexto adicional.'}}</p><div class="subhead">Alternativas consideradas</div><div class="chips">@for(alt of item.alternatives;track alt){<span>{{alt}}</span>}</div></section><section class="run-card"><div class="run-icon">✳</div><span class="eyebrow">ANÁLISIS MULTIAGENTE</span><h3>Convierte el escenario en perspectiva.</h3><p>Cuatro agentes especializados evaluarán tus alternativas y el analista generará una recomendación ponderada.</p>@if(gaps().length){<div class="gaps"><b>Para un análisis más preciso:</b>@for(gap of gaps();track gap){<div>• {{gap}}</div>}<a [routerLink]="['/app/decisions', item.id, 'edit']">Completar información →</a></div>}<button (click)="runAnalysis()" [disabled]="analyzing()">{{analyzing()?'Ejecutando agentes...':'Ejecutar análisis'}} <span>↗</span></button>@if(analyzing()){<small class="progress-note" aria-live="polite">{{progressSteps[progressStep()]}}</small>}</section></div>
       @if(error()){<div class="alert">{{error()}}</div>}
       <section class="history panel"><div class="section-head"><div><span class="eyebrow">HISTORIAL</span><h2>Análisis realizados</h2></div><span class="muted">{{analyses().length}} registros</span></div>
         @if(analyses().length===0){<div class="empty">Todavía no hay análisis. Ejecuta el primero para ver la evaluación de tus agentes.</div>}
@@ -50,8 +50,20 @@ export class DecisionDetailPage {
   readonly loading=signal(true);
   readonly analyzing=signal(false);
   readonly error=signal('');
+  /** Messages shown while the agents work, so a long analysis feels alive. */
+  readonly progressSteps=[
+    'Enviando el escenario al orquestador...',
+    'Agente financiero evaluando costos y beneficios...',
+    'Agente tecnológico revisando la viabilidad...',
+    'Agente de impacto humano analizando a las personas...',
+    'Agente de riesgos identificando amenazas...',
+    'El analista está consolidando y redactando el informe...'
+  ];
+  readonly progressStep=signal(0);
+  private progressTimer:ReturnType<typeof setInterval>|null=null;
   private id=0;
   constructor(){
+    inject(DestroyRef).onDestroy(()=>this.stopProgress());
     this.id=Number(this.route.snapshot.paramMap.get('id'));
     if(!Number.isInteger(this.id)||this.id<=0){this.error.set('El identificador de la decisión no es válido.');this.loading.set(false);return;}
     this.api.get<Decision>(`/decisions/${this.id}`).subscribe({next:value=>{this.decision.set(value);this.loading.set(false);},error:e=>{this.error.set(e.message);this.loading.set(false);}});
@@ -68,11 +80,17 @@ export class DecisionDetailPage {
   private latestAnalysis(values:Analysis[]){return [...values].sort((a,b)=>(b.created_at||'').localeCompare(a.created_at||'')||b.id-a.id)[0];}
   runAnalysis(){
     this.analyzing.set(true);this.error.set('');this.complete.set(null);
+    this.startProgress();
     this.api.analyzeDecision(this.id).subscribe({
-      next:analysis=>{this.analyzing.set(false);this.reloadAnalyses();this.loadComplete(analysis);},
-      error:e=>{this.error.set(e.message);this.analyzing.set(false);}
+      next:analysis=>{this.stopProgress();this.analyzing.set(false);this.reloadAnalyses();this.loadComplete(analysis);},
+      error:e=>{this.stopProgress();this.error.set(e.message);this.analyzing.set(false);}
     });
   }
+  private startProgress(){
+    this.stopProgress();this.progressStep.set(0);
+    this.progressTimer=setInterval(()=>this.progressStep.update(step=>Math.min(step+1,this.progressSteps.length-1)),2500);
+  }
+  private stopProgress(){if(this.progressTimer){clearInterval(this.progressTimer);this.progressTimer=null;}}
   loadComplete(analysis:Analysis){
     this.api.completeAnalysis(this.id,analysis.id).subscribe({next:value=>this.complete.set(value),error:e=>this.error.set(e.message)});
   }
