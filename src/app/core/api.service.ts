@@ -69,6 +69,12 @@ export interface Statistics {
   top_recommendations: Array<{ alternative: string; times_recommended: number }>;
 }
 
+export interface HealthStatus {
+  status: string;
+  database: string;
+  ai_configured: boolean;
+}
+
 @Injectable({ providedIn: 'root' })
 export class ApiService {
   private readonly http = inject(HttpClient);
@@ -223,6 +229,10 @@ export class ApiService {
     return this.get<CompleteAnalysis>(
       `/decisions/${decisionId}/analyses/${analysisId}/complete`
     );
+  }
+
+  health() {
+    return this.http.get<HealthStatus>(`${this.baseUrl}/health`);
   }
 
   statistics() {
