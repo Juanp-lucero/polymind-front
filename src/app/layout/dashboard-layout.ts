@@ -21,7 +21,7 @@ import { ApiService } from '../core/api.service';
         </div>
       </aside>
       <main class="main-area">
-        <header><button class="mobile-menu" (click)="sidebarOpen.set(!sidebarOpen())">☰</button><div class="breadcrumb">POLYMIND <span>/</span> <b>{{ section() }}</b></div><div class="header-right"><span class="live"><i></i> Workspace activo</span><div class="header-avatar">{{ initials() }}</div></div></header>
+        <header><button class="mobile-menu" type="button" aria-label="Abrir o cerrar el menú" [attr.aria-expanded]="sidebarOpen()" (click)="sidebarOpen.set(!sidebarOpen())">☰</button><div class="breadcrumb">POLYMIND <span>/</span> <b>{{ section() }}</b></div><div class="header-right"><span class="live"><i></i> Workspace activo</span><div class="header-avatar">{{ initials() }}</div></div></header>
         <section class="page-content"><router-outlet /></section>
       </main>
     </div>
